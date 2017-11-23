@@ -1,0 +1,15 @@
+body, ul{
+  margin: 0;
+  padding: 0;
+}
+ol {
+  padding: 0;
+}
+body {
+  font-size: 14px;
+  line-height: 1.4;
+}
+a {
+  text-decoration: none;
+  color: #333;
+}

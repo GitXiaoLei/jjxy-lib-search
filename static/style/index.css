@@ -1,0 +1,37 @@
+@import url(./reset.css);
+a {
+  font-size: 12px;
+}
+#form-wrap {
+  text-align: center;
+  margin-top: 10px;
+}
+[v-cloak] {
+  display: none;
+}
+#detail-wrap {
+  margin-top: 20px;
+}
+#detail-wrap .list{
+  display: block;
+  height: 80px;
+  margin: 0 16px;
+  border-top: 1px solid #aaa;
+}
+.title {
+  margin-top: 6px;
+}
+.book-count span, .count {
+  color: #999;
+  font-size: 12px;
+  margin-left: 12px;
+  text-align: center;
+}
+.count {
+  margin-bottom: 10px;
+}
+.paging {
+  margin: 0 16px;
+  padding: 10px 0;
+  border-top: 1px solid #aaa;
+}
