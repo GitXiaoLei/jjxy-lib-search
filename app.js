@@ -1,9 +1,7 @@
-const express = require('express');
-const app = express();
-const request = require('request');
-const cheerio = require('cheerio');
-
-let searchUrl = 'http://210.35.16.85:8080/opac/openlink.php?strSearchType=title&match_flag=forward&historyCount=1&strText=???&doctype=ALL&with_ebook=on&displaypg=20&showmode=list&sort=CATA_DATE&orderby=desc&dept=ALL'
+const express = require('express')
+const app = express()
+const request = require('request')
+const cheerio = require('cheerio')
 
 app.engine('html', require('ejs').renderFile)
 app.set('view engine', 'html')
@@ -17,6 +15,7 @@ app.get('/', function (req, res) {
 
 // 获取书籍列表
 app.get('/list', function(req, res) {
+  let searchUrl = 'http://210.35.16.85:8080/opac/openlink.php?strSearchType=title&match_flag=forward&historyCount=1&strText=???&doctype=ALL&with_ebook=on&displaypg=20&showmode=list&sort=CATA_DATE&orderby=desc&dept=ALL'
   const title = req.query.title
   const url = searchUrl.replace('???', title)
   request(url, function(error, response, body) {
@@ -29,7 +28,7 @@ app.get('/list', function(req, res) {
           title: $this.find('a').text().slice(0, $(this).find('a').text().length-2), // 标题
           mc: $this.find('p span').text().slice(5, 7), // 馆藏复本
           cb: $this.find('p span').text().slice($this.find('p span').text().indexOf('可借') + 5), // 可借复本
-          detailUrl: $this.find('a').attr('href').slice(18), // 地址
+          detailUrl: $this.find('a').attr('href').slice(17), // 地址
         }
         lists.push(obj)
       })
@@ -44,31 +43,7 @@ app.get('/list', function(req, res) {
   })
 });
 
-// 书籍详情页面
-app.get('/detail', function (req, res) {
-  const item = req.query.item
-  const url = 'http://210.35.16.85:8080/opac/item.php?marc_no=' + item
-  console.log(url)
-  request(url, function (error, response, body) {
-    if (!error && response.statusCode === 200) {
-      $ = cheerio.load(body)
-      let title = ''
-      /* $('.booklist').each(function (index, ele) {
-        console.log(index)
-        if (index === 0) {
-          title = $(this).find('dt').text()
-          console.log(title)
-        }
-      }) */
-      title = $('#marc').text()
-      console.log(title)
-      res.render('detail.html',{
-        title: title
-      })
-    }
-  })
-})
-// 上一页/下一页
+// 上一页/下一页/某一页
 app.get('/page', function (req, res) {
   let url = 'http://210.35.16.85:8080/opac/openlink.php?dept=ALL&title=?title?&doctype=ALL&lang_code=ALL&match_flag=forward&displaypg=20&showmode=list&orderby=DESC&sort=CATA_DATE&onlylendable=no&count=?count?&with_ebook=on&page=?page?'
   const title = req.query.title
@@ -98,7 +73,68 @@ app.get('/page', function (req, res) {
   })
 })
 
+const phantom = require('phantom');
+// 书籍详情页面
+app.get('/detail', async function (req, res) {
+  const item = req.query.item
+  const url = 'http://210.35.16.85:8080/opac/item.php?marc_no=' + item
+  const instance = await phantom.create()
+  const page = await instance.createPage()
+  /* await page.on('onResourceRequested', function(requestData) {
+    console.info('Requesting', requestData.url)
+  }) */
+  const status = await page.open(url)
+  const content = await page.property('content')
+  $ = cheerio.load(content, {decodeEntities: false})
+  let title, size, note
+  $('#item_detail .booklist').each(function (i, ele) {
+    if (i === 0) {
+      title = $(this).find('dd').text()
+    }
+    if (i === 3) {
+      size = $(this).find('dd').text()
+    }
+    if ($(this).find('dt').text() === '提要文摘附注:') {
+      note = $(this).find('dd').text()
+    }
+  })
+  $trList = $('#tabs2 #item tr')
+  let imgUrl = $('#book_img').attr('src')
+  imgUrl = imgUrl.indexOf('..') === 0 ? '' : imgUrl
+  const doubanText = $('#douban_content').find('#intro').text()
+  const mcInfo = []
+  $trList.each(function (i, ele) {
+    if ($(this).hasClass('whitetext')) {
+      const $tdList = $(this).find('td')
+      const obj = {}
+      $tdList.each(function (i, ele) {
+        switch (i) {
+          case 0: obj.callNum = $(this).text()
+          break
+          case 1: obj.barCode = $(this).text()
+          break
+          case 3: obj.documentLocation = $(this).text().trim()
+          break
+          case 4: obj.bookStatus = $(this).text()
+          break
+          case 5: obj.returnBookLocation = $(this).text()
+        }
+      })
+      mcInfo.push(obj)
+    }
+  })
+  res.render('detail.html', {
+    title,
+    imgUrl,
+    size,
+    note,
+    doubanText,
+    mcInfo
+  })
+  await instance.exit()
+})
 
-var server = app.listen(3333, function() {
-  console.log('listening at 3333');
-});
+const server = app.listen(3333, function() {
+  console.log('listening at 3333')
+})
+

@@ -7,7 +7,33 @@
   <title>详情</title>
 </head>
 <body>
-  <div>详情</div>
-  <div><%= title %></div>
+  <img src="<%= imgUrl %>" alt="书籍图片">
+  <div>题名/责任者：<%= title %></div>
+  <br>
+  <div>载体形态项：<%= size %></div>
+  <br>
+  <div>提要文摘附注：<%= note %></div>
+  <br>
+  <div>豆瓣简介：<%= doubanText %></div>
+  <div>馆藏信息：</div>
+  <br>
+  <table border="1">
+    <tr>
+      <th>索书号</th>
+      <th>条码号</th>
+      <th>校区-馆藏地</th>
+      <th>书籍状态</th>
+      <th>还书位置</th>
+    </tr>
+    <% for(var i = 0, len = mcInfo.length; i < len; i++) { %>
+      <tr>
+        <td><%= mcInfo[i].callNum %></td>
+        <td><%= mcInfo[i].barCode %></td>
+        <td><%= mcInfo[i].documentLocation %></td>
+        <td><%= mcInfo[i].bookStatus %></td>
+        <td><%= mcInfo[i].returnBookLocation %></td>
+      </tr>
+    <% } %>
+  </table>
 </body>
 </html>
